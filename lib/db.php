@@ -2,6 +2,8 @@
 
 namespace neko {
 
+	use Exception;
+
 	/**
 	 * db globals
 	 * db info should be set from outside (ie. ../local/db_info.php)
@@ -98,29 +100,47 @@ namespace neko {
 	 *
 	 * example: query("select * from '?' where userid = ?", 'users', 1);
 	 */ 
-	function query($query_template /* , sqlparam1, sqlparam2, ... */) {
+	function query($query_template, ...$sql_args) {
 		global $mysql_info;
 		$result = false;;
 
 		if (!Database::$connection) {
-			if (!(Database::$connection = mysqli_connect($mysql_info['domain'],
-				$mysql_info['user'], $mysql_info['password'], $mysql_info['db']))) {
+			if (!(Database::$connection = mysqli_connect(Database::$domain,
+				Database::$user, Database::$password, Database::$name))) {
 				// ?
 				throw new Exception('database connection failed');
 			};
 		}
 
-		$args = func_num_args(); $arg_cur = null;
+		$args = count($sql_args);
+
+		if ($args < 1) {
+			/**
+			 * safe to execute raw sql as no params
+			 */
+			$result = mysqli_query(Database::$connection,
+				mysqli_real_escape_string($query_template));
+
+			if ($result) {
+				return new QueryResult($result);
+			}
+			else {
+				throw new Exception('mysqli error: ' .
+					mysqli_error(Datebase::$connection));
+			} 
+		}
+
+		$arg_cur = null;
 		$safe_query = $query_template[0]; $len = strlen($query_template);
 		$query_template .= ' '; /* prevent needing big case on $i+1 */
 
 		for ($i = 1, $argn = 0; $i < $len; $i++) {
 			if ($query_template[$i] == '?') {
-				if ($argn+1 > $args) {
+				if ($argn > $args) {
 					throw new Exception('not enough parameters given in query');
 				}
 				elseif ($query_template[$i+1] == '?') {
-					$arg_cur = func_get_arg($argn+1);
+					$arg_cur = $sql_args[$argn];
 					/* ?? partially safe delimiter */
 					if (is_string($arg_cur)) {
 						$safe_query .= mysqli_real_escape_string(Database::$connection, $arg_cur);
@@ -137,7 +157,7 @@ namespace neko {
 
 				elseif (($query_template[$i+1] == "'" || $query_template[$i+1] == '"')
 					&& ($query_template[$i-1] == "'" || $query_template[$i-1] == '"')) {
-					$arg_cur = func_get_arg($argn+1);
+					$arg_cur = $sql_args[$argn];
 					/* "'?'" quoted safe delimiter */
 					if (!is_string($arg_cur)) {
 						throw new Exception('non string variable data type used as string given' .
@@ -150,7 +170,7 @@ namespace neko {
 				}
 
 				elseif ($query_template[$i+1] == '`' && $query_template[$i-1] == '`') {
-					$arg_cur = func_get_arg($argn+1);
+					$arg_cur = $sql_args[$argn];
 					
 					/**
 					 *`?` quoted safe delimiter, removed backticks which aren't
@@ -169,9 +189,10 @@ namespace neko {
 				elseif (($query_template[$i+1] == ' ' || $query_template[$i+1] == "\n" ||
 					$query_template[$i+1] == "\r" || $query_template[$i+1] == "\t")
 					&& ($query_template[$i-1] == ' ' || $query_template[$i-1] == "\n" ||
-					$query_template[$i+1] == "\r" || $query_template[$i+1] == "\t")) {
+					$query_template[$i+1] == "\r" || $query_template[$i+1] == "\t") ||
+					$query_template[$i+1] == ";") {
 
-					$arg_cur = func_get_arg($argn+1);
+					$arg_cur = $sql_args[$argn];
 					/* ? safe delimiter seperated by whitespace */
 					if (!is_string($arg_cur)) {
 						if (is_int($arg_cur) || is_bool($arg_cur)) {
@@ -222,7 +243,14 @@ namespace neko {
 		}
 
 		$result = mysqli_query(Database::$connection, $safe_query);
-		return new QueryResult($result);
+		if ($result) {
+			return new QueryResult($result);
+		}
+		else {
+			throw new Exception('mysqli error: ' .
+				mysqli_error(Database::$connection));
+		} 
+
 	}
 
 }
