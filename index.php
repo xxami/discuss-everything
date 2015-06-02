@@ -1,6 +1,6 @@
 <?php
 
-namespace xxami {
+namespace neko {
 
 	require_once('db.php');
 

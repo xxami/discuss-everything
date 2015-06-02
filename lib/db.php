@@ -1,10 +1,10 @@
 <?php
 
-namespace xxami {
+namespace neko {
 
 	/**
 	 * db globals
-	 * db info should be set from outside (ie. ../locaal/db_info.php)
+	 * db info should be set from outside (ie. ../local/db_info.php)
 	 */
 	class Database {
 
