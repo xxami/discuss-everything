@@ -3,25 +3,44 @@
 namespace xxami {
 
 	/**
-	 * should be overwritten after inclusion with per project details
+	 * db globals
+	 * db info should be set from outside (ie. ../locaal/db_info.php)
 	 */
-	$mysql_info = array(
-		'domain' => 'localhost',
-		'user' => 'root',
-		'password' => '',
-		'db' => 'default',
-	);
+	class Database {
 
-	/**
-	 * should be initialized only when needed in query()
-	 */
-	$connection = null;
+		/**
+		 * configure: db domain
+		 */
+		public static $domain = null;
+
+		/**
+		 * configure: db user
+		 */
+		public static $user = null;
+
+		/**
+		 * configure: db password
+		 */
+		public static $password = null;
+
+		/**
+		 * configure: db name
+		 */
+		public static $name = null;
+
+		/**
+		 * initialized only when needed - see: query()
+		 */
+		public static $connection = null;
+
+	}
 
 	/**
 	 * sql query result object
 	 * easily iterate/re-iterate from a query() call
 	 */
 	class QueryResult {
+
 		private $sql_result;
 		
 		public function __construct($sql_result) {
@@ -43,8 +62,7 @@ namespace xxami {
 		 * get last autoincremented insert id
 		 */
 		public function get_last_insert_id() {
-			global $connection;
-			return mysqli_insert_id($connection);
+			return mysqli_insert_id(Database::$connection);
 		}
 
 		/**
@@ -65,6 +83,7 @@ namespace xxami {
 				mysqli_data_seek($this->sql_result, 0);
 			}
 		}
+
 	}
 
 	/**
@@ -80,12 +99,11 @@ namespace xxami {
 	 * example: query("select * from '?' where userid = ?", 'users', 1);
 	 */ 
 	function query($query_template /* , sqlparam1, sqlparam2, ... */) {
-		global $connection;
 		global $mysql_info;
 		$result = false;;
 
-		if (!$connection) {
-			if (!($connection = mysqli_connect($mysql_info['domain'],
+		if (!Database::$connection) {
+			if (!(Database::$connection = mysqli_connect($mysql_info['domain'],
 				$mysql_info['user'], $mysql_info['password'], $mysql_info['db']))) {
 				// ?
 				throw new Exception('database connection failed');
@@ -105,7 +123,7 @@ namespace xxami {
 					$arg_cur = func_get_arg($argn+1);
 					/* ?? partially safe delimiter */
 					if (is_string($arg_cur)) {
-						$safe_query .= mysqli_real_escape_string($connection, $arg_cur);
+						$safe_query .= mysqli_real_escape_string(Database::$connection, $arg_cur);
 						$argn++; $i++;
 						continue;
 					}
@@ -125,7 +143,7 @@ namespace xxami {
 						throw new Exception('non string variable data type used as string given' .
 							' in query at parameter '. strval($argn+1));
 					}
-					$safe_query .= mysqli_real_escape_string($connection,
+					$safe_query .= mysqli_real_escape_string(Database::$connection,
 						$arg_cur) . $query_template[$i+1];
 					$argn++; $i++;
 					continue;
@@ -142,7 +160,7 @@ namespace xxami {
 						throw new Exception('non string variable data type used as string' .
 							' given in query at parameter ' . strval($argn+1));
 					}
-					$safe_query .= mysqli_real_escape_string($connection,
+					$safe_query .= mysqli_real_escape_string(Database::$connection,
 						str_replace('`', '', $arg_cur)) . $query_template[$i+1];
 					$argn++; $i++;
 					continue;
@@ -203,7 +221,7 @@ namespace xxami {
 			}
 		}
 
-		$result = mysqli_query($connection, $safe_query);
+		$result = mysqli_query(Database::$connection, $safe_query);
 		return new QueryResult($result);
 	}
 

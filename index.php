@@ -1,9 +1,11 @@
-<?
+<?php
 
 namespace xxami {
 
-	require_once('lib/db.php');
+	require_once('db.php');
 
 	echo 'test';
 
 }
+
+?>
