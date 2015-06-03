@@ -12,15 +12,28 @@ namespace de {
 	$form->add_child($button);
 
 	if (isset($_POST[$button->name])) {
-		echo 'button pressed';
+
+		echo 'install ./core.sql... ';
+		$r = query_r(file_get_contents('./core.sql'));
+		echo 'ok (' . $r->get_last_affected_rows() . ')<br>';
+
+		if (file_exists('../local/data.sql')) {
+			echo 'install ../local/data.sql... ';
+			$r = query_r(file_get_contents('../local/data.sql'));
+			echo 'ok (' . $r->get_last_affected_rows() . ')<br>';
+			echo 'done: please delete /setup/ now!';
+		}
+
 	}
 
 	else {
 
 		$r = query_r("show tables");
 		if ($r->get_num_rows() > 0) {
-			$button->text = 'wipe + reinstall?';
+			echo '** warning: this will wipe the entire database **';
+			$button->text = 'i understand: wipe + reinstall';
 		}
+
 		else {
 			$button->text = 'install';
 		}

@@ -68,6 +68,13 @@ namespace de {
 		}
 
 		/**
+		 * get last number of affected rows
+		 */
+		public function get_last_affected_rows() {
+			return mysqli_affected_rows(Database::$connection);
+		}
+
+		/**
 		 * get the number of rows returned from this query
 		 */
 		public function get_num_rows() {
@@ -259,11 +266,7 @@ namespace de {
 			};
 		}
 		
-		/**
-		 * escape unnecessary -just incase
-		 */
-		$result = mysqli_query(Database::$connection,
-			mysqli_real_escape_string(Database::$connection, $query));
+		$result = mysqli_query(Database::$connection, $query);
 
 		if ($result) {
 			return new QueryResult($result);
