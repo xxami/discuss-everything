@@ -1,6 +1,6 @@
 <?php
 
-namespace neko {
+namespace de {
 
 	use Exception;
 
@@ -68,6 +68,13 @@ namespace neko {
 		}
 
 		/**
+		 * get the number of rows returned from this query
+		 */
+		public function get_num_rows() {
+			return mysqli_num_rows($this->sql_result);
+		}
+
+		/**
 		 * return next result
 		 */
 		public function get_next() {
@@ -113,23 +120,6 @@ namespace neko {
 		}
 
 		$args = count($sql_args);
-
-		if ($args < 1) {
-			/**
-			 * safe to execute raw sql as no params
-			 */
-			$result = mysqli_query(Database::$connection,
-				mysqli_real_escape_string($query_template));
-
-			if ($result) {
-				return new QueryResult($result);
-			}
-			else {
-				throw new Exception('mysqli error: ' .
-					mysqli_error(Datebase::$connection));
-			} 
-		}
-
 		$arg_cur = null;
 		$safe_query = $query_template[0]; $len = strlen($query_template);
 		$query_template .= ' '; /* prevent needing big case on $i+1 */
@@ -250,6 +240,38 @@ namespace neko {
 			throw new Exception('mysqli error: ' .
 				mysqli_error(Database::$connection));
 		} 
+
+	}
+
+	/**
+	 * perform raw (unsafe) sql query using mysqli
+	 * returns QueryResults object
+	 *
+	 * example: query("select * from test");
+	 */
+	function query_r($query) {
+
+		if (!Database::$connection) {
+			if (!(Database::$connection = mysqli_connect(Database::$domain,
+				Database::$user, Database::$password, Database::$name))) {
+				// ?
+				throw new Exception('database connection failed');
+			};
+		}
+		
+		/**
+		 * escape unnecessary -just incase
+		 */
+		$result = mysqli_query(Database::$connection,
+			mysqli_real_escape_string(Database::$connection, $query));
+
+		if ($result) {
+			return new QueryResult($result);
+		}
+		else {
+			throw new Exception('mysqli error: ' .
+				mysqli_error(Database::$connection));
+		}
 
 	}
 

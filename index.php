@@ -1,6 +1,6 @@
 <?php
 
-namespace neko {
+namespace de {
 
 	require_once('db.php');
 
