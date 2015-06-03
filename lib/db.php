@@ -278,6 +278,34 @@ namespace de {
 
 	}
 
+	/**
+	 * perform multi-line raw (unsafe) sql queries using mysqli
+	 * returns QueryResults object
+	 *
+	 * example: query("select * from test");
+	 */
+	function mquery_r($query) {
+
+		if (!Database::$connection) {
+			if (!(Database::$connection = mysqli_connect(Database::$domain,
+				Database::$user, Database::$password, Database::$name))) {
+				// ?
+				throw new Exception('database connection failed');
+			};
+		}
+		
+		$result = mysqli_multi_query(Database::$connection, $query);
+
+		if ($result) {
+			return new QueryResult($result);
+		}
+		else {
+			throw new Exception('mysqli error: ' .
+				mysqli_error(Database::$connection));
+		}
+
+	}
+
 }
 
 ?>
