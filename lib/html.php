@@ -86,6 +86,11 @@ namespace de {
 
 			return $res;
 		}
+
+		public function write() {
+			echo $this->render();
+			return $this;
+		}
 		
 	}
 

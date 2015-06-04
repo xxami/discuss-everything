@@ -14,28 +14,7 @@ namespace de {
 	/**
 	 * create new post
 	 */
-	$button = html('button')
-		->attr(['name' => 'create_post'])
-		->val('create new post');
-	$form = html('form')
-		->attr(['action' => '', 'method' => 'post'])
-		->add_child($button);
-
-	/**
-	 * create the post
-	 */
-	if (isset($_POST[$button->attr('name')])) {
-
-		/**
-		 * todo: redirect user to created post
-		 */
-		echo 'todo: redirect';
-	}
-
-	/**
-	 * display the post button
-	 */
-	echo $form->render();
+	html('a')->attr(['href' => 'post.php'])->val('create new post')->write();
 
 	/**
 	 * display posts

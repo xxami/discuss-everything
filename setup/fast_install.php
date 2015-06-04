@@ -43,7 +43,7 @@ namespace de {
 			$button->val('install');
 		}
 
-		echo $form->render();
+		$form->write();
 
 	}
 
