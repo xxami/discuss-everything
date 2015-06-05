@@ -81,6 +81,8 @@ namespace de {
 	 */
 	if (isset($_COOKIE['user_cookie_id'])) {
 
+		query_dbg(true);
+
 		$r = query("select user.id, user.name from user where user.cookie_id = '?'",
 			$_COOKIE['user_cookie_id']);
 		if ($user = $r->get_first()) {
@@ -101,7 +103,7 @@ namespace de {
 					if ($len == 0 || $len > 32) $invalid_tags = true;
 				}
 
-				if (count($tags) > 6 || $invalid_Tags) {
+				if (count($tags) > 6 || $invalid_tags) {
 					/**
 					 * should never happen - js should prevent this
 					 */
@@ -129,22 +131,61 @@ namespace de {
 				}
 				else {
 					/**
-					 * ok to post
+					 * ok to post - todo: optimize queries (far too many!)
 					 */
+
+					/**
+					 * get/create tags: $tag_ids = tag_name => tag_id
+					 * todo: extend dbapi to support @ for 'in' statements using arrays
+					 */
+					$in = implode(', ', array_fill(0, count($tags), "'?'"));
+					$r = query("select * from post_tag where post_tag.name in ($in);",
+						...$tags);
+					$tag_ids = [];
+					while ($post_tag = $r->get_next()) {
+						$tag_ids[$post_tag['name']] = $post_tag['id'];
+					}
+					foreach ($tags as $tag) {
+						if (!isset($tag_ids[$tag])) {
+							$r = query("insert into post_tag values (null, '?');", $tag);
+							$tag_ids[$tag] = $r->get_last_insert_id();
+						}
+					}
 
 					/**
 					 * get type ids from given type name
 					 */
 					$r = query("select * from post_type where post_type.name = '?';",
 						$_POST['post_type']);
+					$post_type = $r->get_first();
 
 					/**
 					 * get category ids from given category name
 					 */
 					$r = query("select * from post_channel where post_channel.name = '?';",
 						$_POST['post_category']);
+					$post_channel = $r->get_first();
 
-					echo 'yay';
+					/**
+					 * insert post_has data
+					 */
+					$r = query("insert into post values (null, '?', '?', ? , '?', ? , " .
+						"CURRENT_TIMESTAMP);", $_POST['post_title'], $_POST['post_url'],
+						(int)$post_type['id'], $_POST['post_content'], (int)$user['id']);
+
+					$post_id = $r->get_last_insert_id();
+					$r = query("insert into post_has_channel values (null, ? , ? );",
+						(int)$post_id, (int)$post_channel['id']);
+
+					foreach($tag_ids as $k => $v) {
+						$r = query("insert into post_has_tag values (null, ? , ? );",
+							(int)$post_id, (int)$v);
+					}
+
+					/**
+					 * redirect to new post
+					 */
+					echo 'post created';
 				}
 
 				/**

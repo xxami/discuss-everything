@@ -35,6 +35,11 @@ namespace de {
 		 */
 		public static $connection = null;
 
+		/**
+		 * if true, query methods will print their query
+		 */
+		public static $debug = false;
+
 	}
 
 	/**
@@ -239,6 +244,8 @@ namespace de {
 			}
 		}
 
+		if (Database::$debug) echo $safe_query . '<br>';
+
 		$result = mysqli_query(Database::$connection, $safe_query);
 		if ($result) {
 			return new QueryResult($result);
@@ -265,6 +272,8 @@ namespace de {
 				throw new Exception('database connection failed');
 			};
 		}
+
+		if (Database::$debug) echo $query . '<br>';
 		
 		$result = mysqli_query(Database::$connection, $query);
 
@@ -293,6 +302,8 @@ namespace de {
 				throw new Exception('database connection failed');
 			};
 		}
+
+		if (Database::$debug) echo $query . '<br>';
 		
 		$result = mysqli_multi_query(Database::$connection, $query);
 
@@ -304,6 +315,14 @@ namespace de {
 				mysqli_error(Database::$connection));
 		}
 
+	}
+
+	/**
+	 * toggles whether query functions will display their query
+	 */
+	function query_dbg($on) {
+		if ($on) Database::$debug = true;
+		else Database::$debug = false;
 	}
 
 }
