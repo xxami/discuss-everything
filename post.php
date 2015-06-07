@@ -234,7 +234,7 @@ namespace de {
 			/**
 			 * redirect or error?
 			 */
-			setcookie('user_cookie_id', '', time() - 3600); // -1 hour
+			setcookie('user_cookie_id', '', time() - 3600, '/'); // -1 hour
 			echo 'sorry - something went wrong!';
 		}
 	}
